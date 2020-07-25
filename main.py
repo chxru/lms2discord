@@ -9,7 +9,7 @@ from tinydb import TinyDB, Query
 from discord_webhook import DiscordWebhook, DiscordEmbed
 
 
-def checkLMS():
+def checkLMS(firstTime=False):
     # import user credentials, urls from env vars
     authData = {
         "username": os.environ["lms-username"], "password": os.environ["lms-password"]}
@@ -69,14 +69,16 @@ def checkLMS():
                 # insert new item to database
                 table.insert({'value': content})
 
-                # discord message
-                webhook = DiscordWebhook(url=webhookURL)
-                embed = DiscordEmbed(
-                    title=course['name'], description=content, color=242424)
-                embed.set_author(name="20FOE-E Scrappy Bot")
-                embed.set_timestamp()
-                webhook.add_embed(embed)
-                webhook.execute()
+                # if script runs for first time, skip discord notification process
+                if firstTime is False:
+                    # discord message
+                    webhook = DiscordWebhook(url=webhookURL)
+                    embed = DiscordEmbed(
+                        title=course['name'], description=content, color=242424)
+                    embed.set_author(name="20FOE-E Scrappy Bot")
+                    embed.set_timestamp()
+                    webhook.add_embed(embed)
+                    webhook.execute()
 
 
 def loggin(name, url):
@@ -85,13 +87,18 @@ def loggin(name, url):
     webhook.execute()
 
 
-# run program at start
-checkLMS()
+if __name__ == '__main__':
+    print("Main.py is running")
 
-# schedule job to run hourly
-schedule.every().hour.do(checkLMS)
+    # run program at start
+    # when new deploy happens heroku do a clean wipe. Which means the database is getting wiped in every
+    # re-deploy. Which result a notification spam because every item in LMS is new to script
+    checkLMS(True)
 
-# keep the script alive
-while 1:
-    schedule.run_pending()
-    time.sleep(1)
+    # schedule job to run hourly
+    schedule.every().hour.do(checkLMS)
+
+    # keep the script alive
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
