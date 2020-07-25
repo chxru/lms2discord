@@ -3,6 +3,7 @@ import schedule
 import time
 import datetime
 import json
+import os
 from bs4 import BeautifulSoup
 from tinydb import TinyDB, Query
 from discord_webhook import DiscordWebhook, DiscordEmbed
@@ -12,9 +13,14 @@ def checkLMS():
     # logging
     loggin("lms-scrappy-e")
 
-    # import user credentials
-    with open('config.json') as f:
-        config = json.load(f)
+    # import user credentials from env vars
+    authData = {
+        "username": os.environ["lms-username"], "password": os.environ["lms-password"]}
+
+    # import user credentials from a file, for local debugging
+    # with open('config.json') as f:
+    #     config = json.load(f)
+    # authData = config['authData']
 
     baseURL = "http://lms.eng.ruh.ac.lk/"
     courses = [
@@ -36,7 +42,7 @@ def checkLMS():
     s = requests.Session()
 
     # get MoodleSession id
-    s.post(baseURL + "login/index.php", data=config['authData'])
+    s.post(baseURL + "login/index.php", data=authData)
 
     for course in courses:
         print("Checking course id %s" % course['id'])
@@ -79,12 +85,12 @@ def loggin(name):
 
 
 # run program at start
-checkLMS()
+# checkLMS()
 
-# schedule job to run 4 times per day
-schedule.every(6).hours.do(checkLMS)
+# # schedule job to run 4 times per day
+# schedule.every(6).hours.do(checkLMS)
 
 # keep the script alive
-while 1:
-    schedule.run_pending()
-    time.sleep(1)
+# while 1:
+#     schedule.run_pending()
+#     time.sleep(1)
