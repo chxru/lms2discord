@@ -10,17 +10,21 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 
 
 def checkLMS():
-    # logging
-    loggin("lms-scrappy-e")
-
-    # import user credentials from env vars
+    # import user credentials, urls from env vars
     authData = {
         "username": os.environ["lms-username"], "password": os.environ["lms-password"]}
+    webhookURL = os.environ["webhookURL"]
+    loggerURL = os.environ["logginURL"]
 
-    # import user credentials from a file, for local debugging
+    # uncomment this when using config.json
     # with open('config.json') as f:
     #     config = json.load(f)
     # authData = config['authData']
+    # webhookURL = config['webhookURL']
+    # loggerURL = config['logginURL']
+
+    # logging
+    loggin("lms-scrappy-e", loggerURL)
 
     baseURL = "http://lms.eng.ruh.ac.lk/"
     courses = [
@@ -32,8 +36,6 @@ def checkLMS():
         {'id': '379', 'name': 'IS3307 Society and the Engineer'},
         {'id': '363', 'name': 'IS3302 Complex Analysis and Mathematical Transform'}
     ]
-    # discord channel webhook url
-    webhookURL = "https://discordapp.com/api/webhooks/736522985862594590/zikQiX-rgR0BxK0MKC4isrKNRg5-0aApDY7hHvI1xNVAD3kjrczRdAcPS4Xx7lztkRT7"
 
     # db init
     db = TinyDB('db.json')
@@ -77,8 +79,7 @@ def checkLMS():
                 webhook.execute()
 
 
-def loggin(name):
-    url = "https://discordapp.com/api/webhooks/736554513388929105/g6i0dSzCUQjI7UFXkxzKjnbnLIOsVEKINB56wX1ye9YmFqtnSbDvzl3SWMhAv4VyJGuQ"
+def loggin(name, url):
     content = name + " started cron job at " + str(datetime.datetime.now())
     webhook = DiscordWebhook(url=url, content=content)
     webhook.execute()
@@ -87,8 +88,8 @@ def loggin(name):
 # run program at start
 checkLMS()
 
-# schedule job to run 4 times per day
-schedule.every(6).hours.do(checkLMS)
+# schedule job to run hourly
+schedule.every().hour.do(checkLMS)
 
 # keep the script alive
 while 1:
