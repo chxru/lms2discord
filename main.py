@@ -85,12 +85,12 @@ def loggin(name):
 
 
 # run program at start
-# checkLMS()
+checkLMS()
 
-# # schedule job to run 4 times per day
-# schedule.every(6).hours.do(checkLMS)
+# schedule job to run 4 times per day
+schedule.every(6).hours.do(checkLMS)
 
 # keep the script alive
-# while 1:
-#     schedule.run_pending()
-#     time.sleep(1)
+while 1:
+    schedule.run_pending()
+    time.sleep(1)
