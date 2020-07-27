@@ -57,28 +57,44 @@ def checkLMS(firstTime=False):
 
         # html parsing
         soup = BeautifulSoup(r2.text, 'html.parser')
-        nodes = soup.find_all("li", {"class": "modtype_resource"})
-        for node in nodes:
-            # Get file name
-            content = node.find("span", {"class": "instancename"}).text
+        # downloadable files
+        # resources files
+        processNodes(soup.find_all("li", {"class": "modtype_resource"}))
+        processNodes(soup.find_all("li", {"class": "modtype_quiz"}))  # quizes
+        processNodes(soup.find_all(
+            "li", {"class": "modtype_assign"}))  # assignments
+        processNodes(soup.find_all(
+            "li", {"class": "modtype_folder"}))  # folders
+        processNodes(soup.find_all(
+            "li", {"class": "modtype_feedback"}))  # feedbacks
 
-            # Search database for previous existance of content.
-            # If no result found,that is a new file
-            if(len(table.search(courseQuery.value == content)) == 0):
-                print("New file found " + content)
-                # insert new item to database
-                table.insert({'value': content})
+        def processNodes(nodes):
+            for node in nodes:
+                # Get file name
+                content = node.find("span", {"class": "instancename"}).text
+                href = node.find("a", href=True)['href']
 
-                # if script runs for first time, skip discord notification process
-                if firstTime is False:
-                    # discord message
-                    webhook = DiscordWebhook(url=webhookURL)
-                    embed = DiscordEmbed(
-                        title=course['name'], description=content, color=242424)
-                    embed.set_author(name="20FOE-E Scrappy Bot")
-                    embed.set_timestamp()
-                    webhook.add_embed(embed)
-                    webhook.execute()
+                # Search database for previous existance of content.
+                # If no result found,that is a new file
+                if(len(table.search(courseQuery.link == href)) == 0):
+                    print("New file found " + content)
+                    # insert new item to database
+                    table.insert({'value': content, 'link': href})
+
+                    # if script runs for first time, skip discord notification process
+                    if firstTime is False:
+                        sendDiscordNotification(
+                            course['name'], content, webhookURL)
+
+
+def sendDiscordNotification(title, description, url):
+    webhook = DiscordWebhook(url=url)
+    embed = DiscordEmbed(
+        title=title, description=description, color=242424)
+    embed.set_author(name="20FOE-E Scrappy Bot")
+    embed.set_timestamp()
+    webhook.add_embed(embed)
+    webhook.execute()
 
 
 def loggin(name, url):
