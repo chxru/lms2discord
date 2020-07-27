@@ -57,16 +57,6 @@ def checkLMS(firstTime=False):
 
         # html parsing
         soup = BeautifulSoup(r2.text, 'html.parser')
-        # downloadable files
-        # resources files
-        processNodes(soup.find_all("li", {"class": "modtype_resource"}))
-        processNodes(soup.find_all("li", {"class": "modtype_quiz"}))  # quizes
-        processNodes(soup.find_all(
-            "li", {"class": "modtype_assign"}))  # assignments
-        processNodes(soup.find_all(
-            "li", {"class": "modtype_folder"}))  # folders
-        processNodes(soup.find_all(
-            "li", {"class": "modtype_feedback"}))  # feedbacks
 
         def processNodes(nodes):
             for node in nodes:
@@ -85,6 +75,15 @@ def checkLMS(firstTime=False):
                     if firstTime is False:
                         sendDiscordNotification(
                             course['name'], content, webhookURL)
+
+        processNodes(soup.find_all("li", {"class": "modtype_resource"}))
+        processNodes(soup.find_all("li", {"class": "modtype_quiz"}))  # quizes
+        processNodes(soup.find_all(
+            "li", {"class": "modtype_assign"}))  # assignments
+        processNodes(soup.find_all(
+            "li", {"class": "modtype_folder"}))  # folders
+        processNodes(soup.find_all(
+            "li", {"class": "modtype_feedback"}))  # feedbacks
 
 
 def sendDiscordNotification(title, description, url):
