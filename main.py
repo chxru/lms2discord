@@ -5,16 +5,18 @@ import datetime
 import json
 import os
 from bs4 import BeautifulSoup
-from tinydb import TinyDB, Query
+import pymongo
 from discord_webhook import DiscordWebhook, DiscordEmbed
 
 
-def checkLMS(firstTime=False):
+def checkLMS():
     # import user credentials, urls from env vars
     authData = {
         "username": os.environ["lms-username"], "password": os.environ["lms-password"]}
     webhookURL = os.environ["webhookURL"]
     loggerURL = os.environ["logginURL"]
+    dbuser = os.environ["dbUser"]
+    dbpwd = os.environ["dbPassword"]
 
     # uncomment this when using config.json
     # with open('config.json') as f:
@@ -22,23 +24,31 @@ def checkLMS(firstTime=False):
     # authData = config['authData']
     # webhookURL = config['webhookURL']
     # loggerURL = config['logginURL']
+    # dbuser = config["mlabs"]["user"]
+    # dbpwd = config["mlabs"]["password"]
 
     # logging
     loggin("lms-scrappy-e", loggerURL)
 
     baseURL = "http://lms.eng.ruh.ac.lk/"
     courses = [
-        {'id': '244', 'name': 'EE3304 Power Systems I'},
-        {'id': '44', 'name': 'EE3305 Signals and Systems'},
-        {'id': '39', 'name': 'EE3301 Analog Electronics'},
-        {'id': '240', 'name': 'EE3302 Data Structures and Algorithms'},
-        {'id': '237', 'name': 'EE3203 Electrical and Electronic Measurements'},
-        {'id': '379', 'name': 'IS3307 Society and the Engineer'},
-        {'id': '363', 'name': 'IS3302 Complex Analysis and Mathematical Transform'}
+        {'id': '244', 'name': 'EE3304 Power Systems I', 'code': 'ee3304'},
+        {'id': '44', 'name': 'EE3305 Signals and Systems', 'code': 'ee3305'},
+        {'id': '39', 'name': 'EE3301 Analog Electronics', 'code': 'ee3301'},
+        {'id': '240', 'name': 'EE3302 Data Structures and Algorithms', 'code': 'ee3302'},
+        {'id': '237', 'name': 'EE3203 Electrical and Electronic Measurements',
+            'code': 'ee3203'},
+        {'id': '379', 'name': 'IS3307 Society and the Engineer', 'code': 'is3307'},
+        {'id': '363', 'name': 'IS3302 Complex Analysis and Mathematical Transform',
+            'code': 'is3302'},
+        {'id': '391', 'name': 'IS3301 Basic Economics', 'code': 'is3301'}
     ]
 
     # db init
-    db = TinyDB('db.json')
+    dbURL = "mongodb://" + dbuser + ":" + dbpwd + \
+        "@ds251002.mlab.com:51002/lms-scrappy?retryWrites=false"
+    client = pymongo.MongoClient(dbURL)
+    db = client.get_default_database()
 
     # create a session for cookie presistance
     s = requests.Session()
@@ -47,10 +57,10 @@ def checkLMS(firstTime=False):
     s.post(baseURL + "login/index.php", data=authData)
 
     for course in courses:
-        print("Checking course id %s" % course['id'])
+        print("Checking course %s" % course['code'])
 
-        table = db.table(course['id'])
-        courseQuery = Query()
+        # set database collection
+        courseDB = db[course['code']]
 
         # Get course data
         r2 = s.get(baseURL + "course/view.php?id=" + course['id'])
@@ -66,15 +76,14 @@ def checkLMS(firstTime=False):
 
                 # Search database for previous existance of content.
                 # If no result found,that is a new file
-                if(len(table.search(courseQuery.link == href)) == 0):
+                searchResult = courseDB.find_one({'link': href})
+                if(searchResult == None):
                     print("New file found " + content)
                     # insert new item to database
-                    table.insert({'value': content, 'link': href})
+                    courseDB.insert_one({'value': content, 'link': href})
 
-                    # if script runs for first time, skip discord notification process
-                    if firstTime is False:
-                        sendDiscordNotification(
-                            course['name'], content, webhookURL)
+                    sendDiscordNotification(
+                        course['name'], content, webhookURL)
 
         processNodes(soup.find_all("li", {"class": "modtype_resource"}))
         processNodes(soup.find_all("li", {"class": "modtype_quiz"}))  # quizes
@@ -106,9 +115,7 @@ if __name__ == '__main__':
     print("Main.py is running")
 
     # run program at start
-    # when new deploy happens heroku do a clean wipe. Which means the database is getting wiped in every
-    # re-deploy. Which result a notification spam because every item in LMS is new to script
-    checkLMS(True)
+    checkLMS()
 
     # schedule job to run hourly
     schedule.every().hour.do(checkLMS)
