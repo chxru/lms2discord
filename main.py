@@ -41,7 +41,8 @@ def checkLMS():
         {'id': '379', 'name': 'IS3307 Society and the Engineer', 'code': 'is3307'},
         {'id': '363', 'name': 'IS3302 Complex Analysis and Mathematical Transform',
             'code': 'is3302'},
-        {'id': '391', 'name': 'IS3301 Basic Economics', 'code': 'is3301'}
+        {'id': '391', 'name': 'IS3301 Basic Economics', 'code': 'is3301'},
+        {'id': '172', 'name': 'Sem3 Lab', 'code': 'sem3lab'}
     ]
 
     # db init
