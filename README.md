@@ -2,6 +2,8 @@
 
 > Notify for new items in moodle based lms
 
+**Important: MLab is migrating to Mongodb atlast from december 2020. I've no intend to update the code to new database service. Check tinydb branch for working script with local database**
+
 For some reasons the LMS used in my university not exposing api for students. So I had to scrap everything and compare them manually to get data about newly added content.
 Script runs once per an hour. So notifications isn't real time
 Script is currently hosted in heroku.
